@@ -238,9 +238,6 @@ class enumratorBase(object):
             prev_links = links
             self.should_sleep()
 
-        return self.subdomains
-
-
 class enumratorBaseThreaded(multiprocessing.Process, enumratorBase):
     def __init__(self, base_url, engine_name, domain, subdomains=None, q=None, silent=False, verbose=True):
         subdomains = subdomains or []
@@ -580,7 +577,6 @@ class NetcraftEnum(enumratorBaseThreaded):
             self.extract_domains(resp)
             if 'Next Page' not in resp:
                 return self.subdomains
-                break
             url = self.get_next(resp)
             self.should_sleep()
 
@@ -604,7 +600,6 @@ class NetcraftEnum(enumratorBaseThreaded):
 
 class DNSdumpster(enumratorBaseThreaded):
     def __init__(self, domain, subdomains=None, q=None, silent=False, verbose=True):
-        subdomains = subdomains or []
         base_url = 'https://dnsdumpster.com/'
         self.live_subdomains = []
         self.engine_name = "DNSdumpster"
