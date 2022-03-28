@@ -55,24 +55,30 @@ def setup_color():
             no_color()
 
 def banner():
-    print("""%s
-         ____        _     _ _     _   _____     ______
-        / ___| _   _| |__ | (_)___| |_|___ / _ __\ __  |    Sublist3r2 v%s
-        \___ \| | | | '_ \| | / __| __| |_ \| '__|  / /     a subdomains enum tool originally by @aboul3la
-         ___) | |_| | |_) | | \__ \ |_ ___) | |    / /_     maintained by Ronin Nakomoto, crahan, its0x08
-        |____/ \__,_|_.__/|_|_|___/\__|____/|_|   /____|%s    https://github.com/RoninNakomoto/Sublist3r2
+    try:
+        R, G, B, Y, sgr0
+    except NameError:
+        setup_color()
 
-    """ % (R, __version__, Y))  # noqa
+    print("""%s
+ ____        _     _ _     _   _____     ______
+/ ___| _   _| |__ | (_)___| |_|___ / _ __\ __  | Sublist3r2 %s
+\___ \| | | | '_ \| | / __| __| |_ \| '__|  / /  a subdomain enumeration tool
+ ___) | |_| | |_) | | \__ \ |_ ___) | |    / /_  originally by @aboul3la
+|____/ \__,_|_.__/|_|_|___/\__|____/|_|   /____| maintained by Ronin Nakomoto,
+                                                 crahan, its0x08%s
+    """ % (R, __version__, sgr0))  # noqa
 
 
 def parse_args():
-    def parser_error(errmsg):
+    def usage_error(errmsg):
+        banner()
         parser.print_usage()
-        sys.exit(2)
+        sys.exit(64) # sysexits.h: EX_USAGE = 64
 
     # parse the arguments
     parser = argparse.ArgumentParser(epilog='\tExample: \r\npython ' + sys.argv[0] + " -d google.com")
-    parser.error = parser_error
+    parser.error = usage_error
     parser._optionals.title = "OPTIONS"
     parser.add_argument('-d', '--domain', help="Domain name to use for subdomain enumeration", required=True)
     parser.add_argument('-b', '--bruteforce', help='Turn-on aiodnsbrute bruteforce mode', nargs='?', default=False)
@@ -680,6 +686,7 @@ class DNSdumpster(enumratorBaseThreaded):
 
 class Virustotal(enumratorBaseThreaded):
     def __init__(self, domain, subdomains=None, q=None, silent=False, verbose=True):
+
         subdomains = subdomains or []
         base_url = 'https://www.virustotal.com/api/v3/domains/{domain}/subdomains'
         self.engine_name = "Virustotal"
@@ -724,9 +731,13 @@ class Virustotal(enumratorBaseThreaded):
                     self.url = ''
                 self.extract_domains(resp)
         else:
+            try:
+                R, G, B, Y, sgr0
+            except NameError:
+                setup_color()
             self.print_(R + "[!] Error: VirusTotal API key environment variable not found. Skipping" + sgr0)
-            self.print_(R + "[!] set VT_APIKEY to your virus total API key using: `export VT_APIKEY=Your_VT_API_KEY_VALUE`" + sgr0)
-            self.print_(B + "[!] To get a VT APIKEY, register at https://www.virustotal.com/gui/join-us" + sgr0)
+            self.print_(R + "[!] export VT_APIKEY with the VirusTotal API key" + sgr0)
+            self.print_("[*] register at https://www.virustotal.com/gui/join-us for a key" + sgr0)
         return self.subdomains
 
     def extract_domains(self, resp):
@@ -938,7 +949,7 @@ def main(domain, threads, savefile, ports, silent, verbose, enable_bruteforce, e
     parsed_domain = urlparse.urlparse(domain)
 
     if not silent:
-        print(B + "[-] Enumerating subdomains now for %s" % parsed_domain.netloc + sgr0)
+        print("[-] Enumerating subdomains now for %s" % parsed_domain.netloc + sgr0)
 
     if verbose and not silent:
         print(Y + "[-] verbosity is enabled, will show the subdomains results in realtime" + sgr0)
