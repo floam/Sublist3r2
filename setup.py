@@ -1,11 +1,12 @@
-#!/usr/bin/env python
-import os
+#!/usr/bin/env python3
+import os, sys
 from setuptools import setup, find_packages
 
 
 def read(fname: str) -> str:
     """Open files relative to package."""
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    with open(os.path.join(sys.path[0], fname)) as fd:
+        return fd.read()
 
 
 setup(
