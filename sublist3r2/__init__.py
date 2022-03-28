@@ -28,35 +28,31 @@ __version__ = '1.0.1'
 # Check if we are running this on windows platform
 is_windows = sys.platform.startswith('win')
 
-# Console Colors
-if is_windows:
-    # Windows deserves coloring too :D
-    G = '\033[92m'  # green
-    Y = '\033[93m'  # yellow
-    B = '\033[94m'  # blue
-    R = '\033[91m'  # red
-    W = '\033[0m'   # white
-    try:
-        import colorama
-        import win_unicode_console
-        win_unicode_console.enable()
-        colorama.init()
-        # Now the unicode will work ^_^
-    except Exception:
-        print("[!] Error: Coloring libraries not installed, no coloring will be used [Check the readme]")
-        G = Y = B = R = W = ''
-else:
-    G = '\033[92m'  # green
-    Y = '\033[93m'  # yellow
-    B = '\033[94m'  # blue
-    R = '\033[91m'  # red
-    W = '\033[0m'   # white
-
-
 def no_color():
-    global G, Y, B, R, W
-    G = Y = B = R = W = ''
+    global R, G, Y, B, sgr0
+    R = Y = B = G = sgr0 = ''
 
+
+def setup_color():
+    global R, G, Y, B, sgr0
+    R = '\033[91m'   # red
+    G = '\033[92m'   # green
+    Y = '\033[93m'   # yellow
+    B = '\033[94m'   # blue
+    sgr0 = '\033[0m' # reset
+
+    # Console Colors
+    if is_windows:
+        # Windows deserves coloring too :D
+        try:
+            import colorama
+            import win_unicode_console
+            win_unicode_console.enable()
+            colorama.init()
+            # Now the unicode will work ^_^
+        except Exception:
+            print("[!] Warning: colorama or win_unicode_console not installed, colors disabled")
+            no_color()
 
 def banner():
     print("""%s
@@ -69,14 +65,11 @@ def banner():
     """ % (R, __version__, Y))  # noqa
 
 
-def parser_error(errmsg):
-    banner()
-    print("Usage: python " + sys.argv[0] + " [Options] use -h for help")
-    print(R + "Error: " + errmsg + W)
-    sys.exit()
-
-
 def parse_args():
+    def parser_error(errmsg):
+        parser.print_usage()
+        sys.exit(2)
+
     # parse the arguments
     parser = argparse.ArgumentParser(epilog='\tExample: \r\npython ' + sys.argv[0] + " -d google.com")
     parser.error = parser_error
@@ -152,7 +145,7 @@ class enumratorBase(object):
 
     def print_banner(self):
         """ subclass can override this if they want a fancy banner :)"""
-        self.print_(G + "[-] Searching now in %s.." % (self.engine_name) + W)
+        self.print_(G + "[-] Searching now in %s.." % (self.engine_name) + sgr0)
         return
 
     def send_req(self, query, page_no=1):
@@ -293,8 +286,8 @@ class GoogleEnum(enumratorBaseThreaded):
 
     def check_response_errors(self, resp):
         if (type(resp) is str) and 'Our systems have detected unusual traffic' in resp:
-            self.print_(R + "[!] Error: Google probably now is blocking our requests" + W)
-            self.print_(R + "[~] Finished now the Google Enumeration ..." + W)
+            self.print_(R + "[!] Error: Google probably now is blocking our requests" + sgr0)
+            self.print_(R + "[~] Finished now the Google Enumeration ..." + sgr0)
             return False
         return True
 
@@ -693,7 +686,7 @@ class Virustotal(enumratorBaseThreaded):
         self.apikey = os.getenv("VT_APIKEY")
 
         if self.apikey is None:
-            vt_apikey = input(B + "[+] Enter VirusTotal API key, press Enter for none: " + W).strip()
+            vt_apikey = input(B + "[+] Enter VirusTotal API key, press Enter for none: " + sgr0).strip()
             if vt_apikey != "":
                 self.apikey = vt_apikey
 
@@ -722,8 +715,8 @@ class Virustotal(enumratorBaseThreaded):
                 resp = self.send_req(self.url)
                 resp = json.loads(resp)
                 if 'error' in resp:
-                    self.print_(R + "Error Code: {}".format(resp['error']["code"]) + W)
-                    self.print_(R + "Virus Total Server Message: {}".format(resp['error']["message"]) + W)
+                    self.print_(R + "Error Code: {}".format(resp['error']["code"]) + sgr0)
+                    self.print_(R + "Virus Total Server Message: {}".format(resp['error']["message"]) + sgr0)
                     break
                 if 'links' in resp and 'next' in resp['links']:
                     self.url = resp['links']['next']
@@ -731,9 +724,9 @@ class Virustotal(enumratorBaseThreaded):
                     self.url = ''
                 self.extract_domains(resp)
         else:
-            self.print_(R + "[!] Error: VirusTotal API key environment variable not found. Skipping" + W)
-            self.print_(R + "[!] set VT_APIKEY to your virus total API key using: `export VT_APIKEY=Your_VT_API_KEY_VALUE`" + W)
-            self.print_(B + "[!] To get a VT APIKEY, register at https://www.virustotal.com/gui/join-us" + W)
+            self.print_(R + "[!] Error: VirusTotal API key environment variable not found. Skipping" + sgr0)
+            self.print_(R + "[!] set VT_APIKEY to your virus total API key using: `export VT_APIKEY=Your_VT_API_KEY_VALUE`" + sgr0)
+            self.print_(B + "[!] To get a VT APIKEY, register at https://www.virustotal.com/gui/join-us" + sgr0)
         return self.subdomains
 
     def extract_domains(self, resp):
@@ -936,7 +929,7 @@ def main(domain, threads, savefile, ports, silent, verbose, enable_bruteforce, e
     domain_check = re.compile(r'^(http|https)?[a-zA-Z0-9]+([\-\.]{1}[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$')
     if not domain_check.match(domain):
         if not silent:
-            print(R + "Error: Please enter a valid domain" + W)
+            print(R + "Error: Please enter a valid domain" + sgr0)
         return []
 
     if not domain.startswith('http://') or not domain.startswith('https://'):
@@ -945,10 +938,10 @@ def main(domain, threads, savefile, ports, silent, verbose, enable_bruteforce, e
     parsed_domain = urlparse.urlparse(domain)
 
     if not silent:
-        print(B + "[-] Enumerating subdomains now for %s" % parsed_domain.netloc + W)
+        print(B + "[-] Enumerating subdomains now for %s" % parsed_domain.netloc + sgr0)
 
     if verbose and not silent:
-        print(Y + "[-] verbosity is enabled, will show the subdomains results in realtime" + W)
+        print(Y + "[-] verbosity is enabled, will show the subdomains results in realtime" + sgr0)
 
     supported_engines = {
         'baidu': BaiduEnum,
@@ -991,7 +984,7 @@ def main(domain, threads, savefile, ports, silent, verbose, enable_bruteforce, e
 
     if enable_bruteforce:
         if not silent:
-            print(G + "[-] Starting bruteforce module now using aiodnsbrute.." + W)
+            print(G + "[-] Starting bruteforce module now using aiodnsbrute.." + sgr0)
         path_to_file = os.path.dirname(os.path.realpath(__file__))
         subs = os.path.join(path_to_file, 'aiodnsbrute', 'subdomains-top1million-110000.txt')
         resolvers = os.path.join(path_to_file, 'aiodnsbrute', 'resolvers.txt')
@@ -1011,18 +1004,18 @@ def main(domain, threads, savefile, ports, silent, verbose, enable_bruteforce, e
             write_file(savefile, subdomains)
 
         if not silent:
-            print(Y + "[-] Total Unique Subdomains Found: %s" % len(subdomains) + W)
+            print(Y + "[-] Total Unique Subdomains Found: %s" % len(subdomains) + sgr0)
 
         if ports:
             if not silent:
-                print(G + "[-] Start port scan now for the following ports: %s%s" % (Y, ports) + W)
+                print(G + "[-] Start port scan now for the following ports: %s%s" % (Y, ports) + sgr0)
             ports = ports.split(',')
             pscan = portscan(subdomains, ports)
             pscan.run()
 
         elif not silent:
             for subdomain in subdomains:
-                print(G + subdomain + W)
+                print(G + subdomain + sgr0)
     return subdomains
 
 
@@ -1039,6 +1032,8 @@ def interactive():
         verbose = True
     if args.no_color:
         no_color()
+    else:
+        setup_color()
     banner()
     main(
         domain, threads, savefile, ports,

@@ -13,7 +13,7 @@ setup(
     name='sublist3r2',
     version='1.0.1',
     python_requires='>=3.6',
-    description='Subdomains enumeration tool for penetration testers',
+    description='Subdomain enumeration tool for penetration testers',
     long_description=read('README.md'),
     long_description_content_type='text/markdown',
     keywords='subdomain dns detection',
